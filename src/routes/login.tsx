@@ -65,9 +65,7 @@ function LoginPage() {
         </Link>
 
         <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {mode === "signin" ? "Sign in to Studio" : "Create an account"}
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">Author sign in</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Access the content management dashboard.
           </p>
@@ -98,24 +96,13 @@ function LoginPage() {
             </div>
             <Button type="submit" disabled={busy} className="w-full">
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              {mode === "signin" ? "Sign in" : "Create account"}
+              Sign in
             </Button>
           </form>
-
-          <p className="mt-5 text-center text-sm text-muted-foreground">
-            {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}
-            <button
-              type="button"
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-              className="font-semibold text-foreground hover:underline"
-            >
-              {mode === "signin" ? "Create one" : "Sign in"}
-            </button>
-          </p>
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Admin access is granted by existing admins. New accounts have no admin privileges by default.
+          Sign-in is restricted to authors. Accounts are provisioned by an existing admin.
         </p>
       </div>
     </div>
