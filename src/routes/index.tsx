@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Play, Mail } from "lucide-react";
+import { ShoppingCart, ChevronRight, Play, Mail, MessageCircle } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { ArticleCard } from "@/components/site/ArticleCard";
@@ -7,7 +7,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { heroArticle, articles, products, events, brands } from "@/lib/mock-data";
+import { heroArticle, articles, products, brands } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,17 +21,25 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
+// Build a "top stories" feed by combining articles + products-as-news
+const topStories = [
+  { kind: "News", title: articles[0].title, author: articles[0].author, image: articles[0].cover, slug: articles[0].slug },
+  { kind: "Versus", title: "PowerBlock Pro 50 vs Bowflex SelectTech: Worth the extra AED 800?", author: "Layla Hassan", image: products[0].image, slug: heroArticle.slug },
+  { kind: "Reviews", title: articles[1].title, author: articles[1].author, image: articles[1].cover, slug: articles[1].slug },
+  { kind: "Versus", title: "Garmin Forerunner 965 vs Apple Watch Ultra 2: Which tracks better?", author: "Omar Khalid", image: products[1].image, slug: heroArticle.slug },
+  { kind: "News", title: articles[2].title, author: articles[2].author, image: articles[2].cover, slug: articles[2].slug },
+];
+
 function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <Hero />
-      <FeaturedReviews />
-      <TrendingProducts />
-      <LatestNews />
-      <BestProducts />
-      <Events />
-      <Shorts />
+      <DealBanner />
+      <MainGrid />
+      <LatestVideos />
+      <CategoryStrip title="Latest reviews" items={articles} />
+      <BestLists />
+      <CategoryStrip title="Fitness news" items={[...articles].reverse()} />
       <Brands />
       <Newsletter />
       <SiteFooter />
@@ -39,137 +47,154 @@ function HomePage() {
   );
 }
 
-function Hero() {
+function DealBanner() {
   return (
-    <section className="container-page pt-10 pb-16 md:pt-14">
-      <Link to="/blog/$slug" params={{ slug: heroArticle.slug }} className="group block">
-        <div className="grid items-center gap-10 md:grid-cols-12">
-          <div className="md:col-span-7 overflow-hidden rounded-2xl bg-surface">
-            <div className="aspect-[16/10] overflow-hidden">
-              <img
-                src={heroArticle.cover}
-                alt={heroArticle.title}
-                width={1600}
-                height={1000}
-                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-              />
-            </div>
-          </div>
-          <div className="md:col-span-5">
-            <span className="inline-flex items-center rounded-full bg-foreground px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-background">
-              Featured · {heroArticle.category}
-            </span>
-            <h1 className="mt-5 text-balance text-3xl font-bold leading-[1.1] tracking-tight md:text-5xl">
-              {heroArticle.title}
-            </h1>
-            <p className="mt-5 text-pretty text-base text-muted-foreground md:text-lg">
-              {heroArticle.excerpt}
-            </p>
-            <div className="mt-6 flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{heroArticle.author}</span>
-              <span>·</span>
-              <span>{heroArticle.date}</span>
-              <span>·</span>
-              <span>{heroArticle.readTime}</span>
-            </div>
-            <Button className="mt-7 gap-2" size="lg">
-              Read the review <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </Link>
+    <section className="container-page pt-8">
+      <a
+        href="#"
+        className="flex items-center justify-center gap-3 rounded-xl bg-brand px-5 py-3.5 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-95"
+      >
+        <ShoppingCart className="h-4 w-4" />
+        Check out the best home-gym & wearable deals this week
+        <ChevronRight className="h-4 w-4" />
+      </a>
+      <p className="mt-2 text-center text-[11px] text-muted-foreground">
+        All products featured are independently chosen by us. Urban Fitness Cart may receive a commission on orders placed through retail links.
+      </p>
     </section>
   );
 }
 
-function FeaturedReviews() {
+function MainGrid() {
   return (
-    <section className="container-page py-14">
-      <SectionHeader eyebrow="In Depth" title="Featured Reviews" href="/blog" />
-      <div className="grid gap-10 md:grid-cols-3">
-        {articles.map((a) => <ArticleCard key={a.slug} {...a} />)}
-      </div>
-    </section>
-  );
-}
-
-function TrendingProducts() {
-  return (
-    <section className="bg-surface py-16">
-      <div className="container-page">
-        <SectionHeader eyebrow="This Week" title="Trending Products" href="/blog" />
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((p) => <ProductCard key={p.id} product={p} />)}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function LatestNews() {
-  return (
-    <section className="container-page py-16">
-      <SectionHeader eyebrow="News" title="Latest in Fitness" href="/blog" />
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-        {[...articles, articles[0]].slice(0, 4).map((a, i) => (
-          <ArticleCard key={i} {...a} size="compact" />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function BestProducts() {
-  return (
-    <section className="container-page py-16">
-      <div className="overflow-hidden rounded-3xl bg-foreground text-background">
-        <div className="grid items-center gap-10 p-8 md:grid-cols-2 md:p-14">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-              Best of 2026
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
-              The gear our editors actually use every day.
-            </h2>
-            <p className="mt-4 max-w-md text-sm text-background/70">
-              Vetted by athletes, tested in real conditions, ranked without paid placements.
-            </p>
-            <Button variant="secondary" className="mt-6 gap-2">
-              See all best lists <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {products.slice(0, 4).map((p) => (
-              <div key={p.id} className="rounded-2xl bg-background p-4 text-foreground">
-                <div className="aspect-square overflow-hidden rounded-lg bg-surface">
-                  <img src={p.image} alt={p.title} loading="lazy" className="h-full w-full object-cover" />
-                </div>
-                <p className="mt-3 line-clamp-2 text-sm font-semibold">{p.title}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{p.price}</p>
+    <section className="container-page pt-8 pb-14">
+      <div className="grid gap-8 lg:grid-cols-12">
+        {/* LEFT — Hero + 2 best products */}
+        <div className="lg:col-span-8 space-y-6">
+          <Link
+            to="/blog/$slug"
+            params={{ slug: heroArticle.slug }}
+            className="group block overflow-hidden rounded-2xl bg-foreground text-background"
+          >
+            <div className="grid md:grid-cols-2">
+              <div className="relative aspect-[4/3] overflow-hidden md:aspect-auto">
+                <img
+                  src={heroArticle.cover}
+                  alt={heroArticle.title}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                />
+                <span className="absolute left-4 top-4 grid h-12 w-12 place-items-center rounded-full bg-brand text-sm font-bold text-brand-foreground ring-4 ring-background/20">
+                  9.1
+                </span>
               </div>
+              <div className="flex flex-col justify-between p-6 md:p-8">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-brand">{heroArticle.category}</p>
+                  <h1 className="mt-3 text-2xl font-bold leading-tight md:text-[28px]">
+                    {heroArticle.title}
+                  </h1>
+                </div>
+                <div className="mt-6 flex items-center gap-3 text-xs text-background/70">
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-brand text-[11px] font-bold text-brand-foreground">
+                    {heroArticle.author.slice(0, 1)}
+                  </span>
+                  <span className="font-medium text-background">{heroArticle.author}</span>
+                  <span>·</span>
+                  <MessageCircle className="h-3.5 w-3.5" /> 12
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            {articles.slice(0, 2).map((a) => (
+              <Link
+                key={a.slug}
+                to="/blog/$slug"
+                params={{ slug: a.slug }}
+                className="group block overflow-hidden rounded-2xl bg-surface"
+              >
+                <div className="aspect-[16/10] overflow-hidden">
+                  <img
+                    src={a.cover}
+                    alt={a.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                </div>
+                <div className="p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-brand">Best products</p>
+                  <h3 className="mt-2 text-lg font-bold leading-snug">{a.title}</h3>
+                  <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="grid h-6 w-6 place-items-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                      {a.author.slice(0, 1)}
+                    </span>
+                    {a.author}
+                  </p>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
+
+        {/* RIGHT — Top stories */}
+        <aside className="lg:col-span-4">
+          <h2 className="text-2xl font-bold text-brand">Top stories</h2>
+          <ol className="mt-5 space-y-5">
+            {topStories.map((s, i) => (
+              <li key={i}>
+                <Link
+                  to="/blog/$slug"
+                  params={{ slug: s.slug }}
+                  className="group flex items-start gap-4"
+                >
+                  <span className="mt-1 grid h-7 w-7 flex-none place-items-center rounded-full bg-brand text-xs font-bold text-brand-foreground">
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-brand">{s.kind}</p>
+                    <h3 className="mt-1 text-[15px] font-bold leading-snug text-foreground group-hover:text-brand transition-colors">
+                      {s.title}
+                    </h3>
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">{s.author}</p>
+                  </div>
+                  <div className="h-16 w-16 flex-none overflow-hidden rounded-lg bg-surface">
+                    <img src={s.image} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </aside>
       </div>
     </section>
   );
 }
 
-function Events() {
+function LatestVideos() {
   return (
-    <section className="container-page py-16">
-      <SectionHeader eyebrow="UAE" title="Upcoming Fitness Events" href="/blog" />
-      <div className="grid gap-6 md:grid-cols-3">
-        {events.map((e) => (
-          <div key={e.title} className="group overflow-hidden rounded-2xl border border-border bg-card">
-            <div className="aspect-[16/10] overflow-hidden">
-              <img src={e.image} alt={e.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+    <section className="container-page py-12 border-t border-border">
+      <div className="mb-6 flex items-center gap-3">
+        <h2 className="text-2xl font-bold">Latest videos</h2>
+        <ChevronRight className="h-5 w-5 text-brand" />
+      </div>
+      <div className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-4 md:mx-0 md:px-0">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="relative aspect-[9/16] w-[180px] flex-none snap-start overflow-hidden rounded-2xl bg-foreground md:w-[220px]"
+          >
+            <img
+              src={products[i % products.length].image}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover opacity-90"
+            />
+            <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-4">
+              <p className="text-xs font-semibold text-white">60s product demo #{i + 1}</p>
             </div>
-            <div className="p-5">
-              <p className="text-xs font-semibold text-brand">{e.date}</p>
-              <h3 className="mt-2 text-lg font-bold">{e.title}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{e.location}</p>
-            </div>
+            <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-foreground">
+              <Play className="h-4 w-4 fill-current" />
+            </span>
           </div>
         ))}
       </div>
@@ -177,29 +202,23 @@ function Events() {
   );
 }
 
-function Shorts() {
+function CategoryStrip({ title, items }: { title: string; items: typeof articles }) {
   return (
-    <section className="bg-surface py-16">
-      <div className="container-page">
-        <SectionHeader eyebrow="Watch" title="YouTube Shorts" />
-        <div className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-4 md:mx-0 md:px-0">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="relative aspect-[9/16] w-[180px] flex-none snap-start overflow-hidden rounded-2xl bg-foreground md:w-[220px]">
-              <img
-                src={products[i % products.length].image}
-                alt=""
-                loading="lazy"
-                className="h-full w-full object-cover opacity-90 transition-transform duration-500 hover:scale-105"
-              />
-              <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-4">
-                <p className="text-xs font-semibold text-white">60s product demo #{i + 1}</p>
-              </div>
-              <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-foreground">
-                <Play className="h-4 w-4 fill-current" />
-              </span>
-            </div>
-          ))}
-        </div>
+    <section className="container-page py-12 border-t border-border">
+      <SectionHeader eyebrow="" title={title} href="/blog" />
+      <div className="grid gap-8 md:grid-cols-3">
+        {items.map((a) => <ArticleCard key={a.slug + title} {...a} />)}
+      </div>
+    </section>
+  );
+}
+
+function BestLists() {
+  return (
+    <section className="container-page py-12 border-t border-border">
+      <SectionHeader eyebrow="" title="Best products of 2026" href="/blog" />
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {products.map((p) => <ProductCard key={p.id} product={p} />)}
       </div>
     </section>
   );
@@ -207,13 +226,16 @@ function Shorts() {
 
 function Brands() {
   return (
-    <section className="container-page py-16">
+    <section className="container-page py-12 border-t border-border">
       <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         Brands we've tested
       </p>
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-12 gap-y-4">
         {brands.map((b) => (
-          <span key={b} className="text-lg font-bold tracking-tight text-muted-foreground/70 transition-colors hover:text-foreground">
+          <span
+            key={b}
+            className="text-lg font-bold tracking-tight text-muted-foreground/70 transition-colors hover:text-foreground"
+          >
             {b}
           </span>
         ))}
@@ -224,8 +246,8 @@ function Brands() {
 
 function Newsletter() {
   return (
-    <section className="container-page py-16">
-      <div className="rounded-3xl bg-surface px-6 py-14 text-center md:px-16">
+    <section className="container-page py-14">
+      <div className="rounded-3xl bg-surface px-6 py-12 text-center md:px-16">
         <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand text-brand-foreground">
           <Mail className="h-5 w-5" />
         </span>
