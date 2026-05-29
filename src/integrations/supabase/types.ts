@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      posts: {
+        Row: {
+          author_id: string | null
+          category: string | null
+          content_html: string
+          cover_url: string | null
+          created_at: string
+          id: string
+          meta_description: string | null
+          published_at: string | null
+          slug: string
+          status: string
+          subtitle: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string | null
+          content_html?: string
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          published_at?: string | null
+          slug: string
+          status?: string
+          subtitle?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string | null
+          content_html?: string
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          published_at?: string | null
+          slug?: string
+          status?: string
+          subtitle?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
