@@ -61,7 +61,7 @@ export async function getPost(id: string): Promise<Post | null> {
 
 export async function upsertPost(input: PostInput): Promise<Post> {
   const { data: { user } } = await supabase.auth.getUser();
-  const payload: Record<string, unknown> = {
+  const payload = {
     slug: input.slug,
     title: input.title,
     subtitle: input.subtitle ?? null,
@@ -72,10 +72,8 @@ export async function upsertPost(input: PostInput): Promise<Post> {
     meta_description: input.meta_description ?? null,
     status: input.status,
     author_id: user?.id ?? null,
+    ...(input.status === "published" ? { published_at: new Date().toISOString() } : {}),
   };
-  if (input.status === "published") {
-    payload.published_at = new Date().toISOString();
-  }
 
   if (input.id) {
     const { data, error } = await supabase
