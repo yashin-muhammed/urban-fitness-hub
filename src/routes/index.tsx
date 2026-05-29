@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, ChevronRight, Play, Mail, MessageCircle } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
@@ -7,7 +8,9 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { heroArticle, articles, products, brands } from "@/lib/mock-data";
+import { heroArticle as mockHero, articles as mockArticles, products, brands } from "@/lib/mock-data";
+import { listPublishedPosts } from "@/lib/posts";
+import { postToCard, type ArticleCardData } from "@/lib/post-display";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,31 +24,44 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-// Build a "top stories" feed by combining articles + products-as-news
-const topStories = [
-  { kind: "News", title: articles[0].title, author: articles[0].author, image: articles[0].cover, slug: articles[0].slug },
-  { kind: "Versus", title: "PowerBlock Pro 50 vs Bowflex SelectTech: Worth the extra AED 800?", author: "Layla Hassan", image: products[0].image, slug: heroArticle.slug },
-  { kind: "Reviews", title: articles[1].title, author: articles[1].author, image: articles[1].cover, slug: articles[1].slug },
-  { kind: "Versus", title: "Garmin Forerunner 965 vs Apple Watch Ultra 2: Which tracks better?", author: "Omar Khalid", image: products[1].image, slug: heroArticle.slug },
-  { kind: "News", title: articles[2].title, author: articles[2].author, image: articles[2].cover, slug: articles[2].slug },
-];
-
 function HomePage() {
+  const { data: published } = useQuery({
+    queryKey: ["posts", "published"],
+    queryFn: listPublishedPosts,
+  });
+  const dbCards: ArticleCardData[] = (published ?? []).map(postToCard);
+
+  // Hero = most recent published, fallback to mock
+  const hero: ArticleCardData = dbCards[0] ?? mockHero;
+  // Article feeds: combine DB posts first, then top up from mock
+  const feed: ArticleCardData[] = [...dbCards.slice(1), ...mockArticles];
+  const reviewsFeed = feed.slice(0, 3);
+  const newsFeed = [...feed].reverse().slice(0, 3);
+
+  const topStories = [
+    { kind: "News", title: feed[0]?.title ?? mockArticles[0].title, author: feed[0]?.author ?? mockArticles[0].author, image: feed[0]?.cover ?? mockArticles[0].cover, slug: feed[0]?.slug ?? mockArticles[0].slug },
+    { kind: "Versus", title: "PowerBlock Pro 50 vs Bowflex SelectTech: Worth the extra AED 800?", author: "Layla Hassan", image: products[0].image, slug: hero.slug },
+    { kind: "Reviews", title: feed[1]?.title ?? mockArticles[1].title, author: feed[1]?.author ?? mockArticles[1].author, image: feed[1]?.cover ?? mockArticles[1].cover, slug: feed[1]?.slug ?? mockArticles[1].slug },
+    { kind: "Versus", title: "Garmin Forerunner 965 vs Apple Watch Ultra 2: Which tracks better?", author: "Omar Khalid", image: products[1].image, slug: hero.slug },
+    { kind: "News", title: feed[2]?.title ?? mockArticles[2].title, author: feed[2]?.author ?? mockArticles[2].author, image: feed[2]?.cover ?? mockArticles[2].cover, slug: feed[2]?.slug ?? mockArticles[2].slug },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <DealBanner />
-      <MainGrid />
+      <MainGrid hero={hero} secondary={feed.slice(0, 2)} topStories={topStories} />
       <LatestVideos />
-      <CategoryStrip title="Latest reviews" items={articles} />
+      <CategoryStrip title="Latest reviews" items={reviewsFeed} />
       <BestLists />
-      <CategoryStrip title="Fitness news" items={[...articles].reverse()} />
+      <CategoryStrip title="Fitness news" items={newsFeed} />
       <Brands />
       <Newsletter />
       <SiteFooter />
     </div>
   );
 }
+
 
 function DealBanner() {
   return (
