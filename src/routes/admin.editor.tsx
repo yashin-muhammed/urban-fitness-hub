@@ -1,28 +1,45 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   ImageIcon, Video, Link2, Package, Bold, Italic, List, ListOrdered,
-  Heading2, Heading3, Quote, Code, Save, Eye, Send, Undo, Redo, Strikethrough,
+  Heading2, Heading3, Quote, Code, Save, Eye, Send, Undo, Redo, Strikethrough, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { getPost, upsertPost, uploadCover, slugify, type PostStatus } from "@/lib/posts";
+
+type EditorSearch = { id?: string };
 
 export const Route = createFileRoute("/admin/editor")({
+  validateSearch: (s: Record<string, unknown>): EditorSearch => ({
+    id: typeof s.id === "string" ? s.id : undefined,
+  }),
   component: EditorPage,
 });
 
 function EditorPage() {
+  const { id } = Route.useSearch();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+
+  const [postId, setPostId] = useState<string | undefined>(id);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [slug, setSlug] = useState("");
   const [meta, setMeta] = useState("");
+  const [category, setCategory] = useState("Reviews");
+  const [tags, setTags] = useState("");
   const [cover, setCover] = useState<string | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [status, setStatus] = useState<PostStatus>("draft");
 
   const editor = useEditor({
     extensions: [
@@ -40,13 +57,76 @@ function EditorPage() {
     },
   });
 
+  // Load existing post
+  const { data: existing, isLoading: loadingPost } = useQuery({
+    queryKey: ["posts", id],
+    queryFn: () => getPost(id!),
+    enabled: !!id,
+  });
+
+  useEffect(() => {
+    if (existing && editor) {
+      setPostId(existing.id);
+      setTitle(existing.title);
+      setSubtitle(existing.subtitle ?? "");
+      setSlug(existing.slug);
+      setMeta(existing.meta_description ?? "");
+      setCategory(existing.category ?? "Reviews");
+      setTags(existing.tags.join(", "));
+      setCover(existing.cover_url);
+      setStatus(existing.status);
+      editor.commands.setContent(existing.content_html || "");
+    }
+  }, [existing, editor]);
+
+  const save = useMutation({
+    mutationFn: async (nextStatus: PostStatus) => {
+      if (!title.trim()) throw new Error("Title is required");
+      const finalSlug = slug.trim() || slugify(title);
+      const result = await upsertPost({
+        id: postId,
+        slug: finalSlug,
+        title: title.trim(),
+        subtitle: subtitle.trim() || null,
+        cover_url: cover,
+        content_html: editor?.getHTML() ?? "",
+        category,
+        tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+        meta_description: meta.trim() || null,
+        status: nextStatus,
+      });
+      return result;
+    },
+    onSuccess: (p, nextStatus) => {
+      setPostId(p.id);
+      setStatus(p.status);
+      qc.invalidateQueries({ queryKey: ["posts"] });
+      qc.invalidateQueries({ queryKey: ["posts", p.id] });
+      toast.success(nextStatus === "published" ? "Post published" : "Draft saved");
+      if (nextStatus === "published") {
+        navigate({ to: "/admin/posts" });
+      } else if (!id) {
+        // sync URL so refresh keeps the same post
+        navigate({ to: "/admin/editor", search: { id: p.id }, replace: true });
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const seoScore = Math.min(100, 30 + Math.min(title.length, 60) + Math.min(meta.length, 60) / 2 + (cover ? 10 : 0));
 
-  function handleCover(file?: File) {
+  async function handleCover(file?: File) {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setCover(String(reader.result));
-    reader.readAsDataURL(file);
+    setCoverUploading(true);
+    try {
+      const url = await uploadCover(file);
+      setCover(url);
+      toast.success("Cover uploaded");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCoverUploading(false);
+    }
   }
 
   function insertImage() {
@@ -72,18 +152,61 @@ function EditorPage() {
     ).run();
   }
 
+  if (id && loadingPost) {
+    return (
+      <div className="grid place-items-center py-20 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Draft</p>
-          <h1 className="text-2xl font-bold tracking-tight">New post</h1>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {postId ? "Edit" : "Draft"}
+          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{postId ? title || "Untitled" : "New post"}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Auto-saved · just now</span>
-          <Button variant="outline" size="sm" className="gap-1.5"><Save className="h-4 w-4" /> Save draft</Button>
-          <Button variant="outline" size="sm" className="gap-1.5"><Eye className="h-4 w-4" /> Preview</Button>
-          <Button size="sm" className="gap-1.5"><Send className="h-4 w-4" /> Publish</Button>
+          {postId && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => window.open(`/admin/preview/${postId}`, "_blank")}
+            >
+              <Eye className="h-4 w-4" /> Preview
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            disabled={save.isPending}
+            onClick={() => save.mutate("draft")}
+          >
+            {save.isPending && save.variables === "draft" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            Save draft
+          </Button>
+          <Button
+            size="sm"
+            className="gap-1.5"
+            disabled={save.isPending}
+            onClick={() => save.mutate("published")}
+          >
+            {save.isPending && save.variables === "published" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+            Publish
+          </Button>
         </div>
       </div>
 
@@ -102,7 +225,7 @@ function EditorPage() {
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value);
-                setSlug(e.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""));
+                if (!postId) setSlug(slugify(e.target.value));
               }}
               placeholder="Untitled post"
               className="w-full bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/40"
@@ -117,13 +240,24 @@ function EditorPage() {
             <label className="block cursor-pointer">
               <input type="file" accept="image/*" hidden onChange={(e) => handleCover(e.target.files?.[0])} />
               {cover ? (
-                <img src={cover} alt="Cover" className="h-60 w-full rounded-xl object-cover" />
+                <div className="relative">
+                  <img src={cover} alt="Cover" className="h-60 w-full rounded-xl object-cover" />
+                  {coverUploading && (
+                    <div className="absolute inset-0 grid place-items-center rounded-xl bg-background/60">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="flex h-44 items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface text-sm text-muted-foreground hover:border-foreground/30">
-                  <div className="text-center">
-                    <ImageIcon className="mx-auto h-6 w-6" />
-                    <p className="mt-2">Drop a cover image or <span className="font-semibold text-foreground">browse</span></p>
-                  </div>
+                  {coverUploading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <div className="text-center">
+                      <ImageIcon className="mx-auto h-6 w-6" />
+                      <p className="mt-2">Drop a cover image or <span className="font-semibold text-foreground">browse</span></p>
+                    </div>
+                  )}
                 </div>
               )}
             </label>
@@ -134,16 +268,28 @@ function EditorPage() {
 
         <aside className="space-y-4">
           <Panel title="Status">
-            <Row label="Status" value={<Pill tone="warn">Draft</Pill>} />
-            <Row label="Visibility" value="Public" />
-            <Row label="Schedule" value="Now" />
+            <Row label="Status" value={<Pill tone={status === "published" ? "ok" : "warn"}>{status}</Pill>} />
+            <Row label="Visibility" value="Admin preview" />
           </Panel>
 
           <Panel title="Category & Tags">
-            <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-              <option>Reviews</option><option>Gadgets</option><option>Home Gym</option><option>News</option><option>Events</option>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option>Reviews</option>
+              <option>Gadgets</option>
+              <option>Home Gym</option>
+              <option>News</option>
+              <option>Events</option>
             </select>
-            <Input placeholder="Add tags…" className="mt-2" />
+            <Input
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="Comma-separated tags…"
+              className="mt-2"
+            />
           </Panel>
 
           <Panel title="SEO">
