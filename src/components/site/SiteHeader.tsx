@@ -32,6 +32,7 @@ export function SiteHeader() {
             <Link
               key={i}
               to={n.to}
+              search={n.search as any}
               className={`text-sm font-medium transition-colors hover:text-brand ${
                 path === n.to ? "text-foreground" : "text-muted-foreground"
               }`}
