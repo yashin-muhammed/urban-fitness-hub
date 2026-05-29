@@ -81,7 +81,16 @@ function DealBanner() {
   );
 }
 
-function MainGrid() {
+function MainGrid({
+  hero,
+  secondary,
+  topStories,
+}: {
+  hero: ArticleCardData;
+  secondary: ArticleCardData[];
+  topStories: { kind: string; title: string; author: string; image: string; slug: string }[];
+}) {
+  const secondaryFilled = secondary.length >= 2 ? secondary : [...secondary, ...mockArticles].slice(0, 2);
   return (
     <section className="container-page pt-8 pb-14">
       <div className="grid gap-8 lg:grid-cols-12">
@@ -89,14 +98,14 @@ function MainGrid() {
         <div className="lg:col-span-8 space-y-6">
           <Link
             to="/blog/$slug"
-            params={{ slug: heroArticle.slug }}
+            params={{ slug: hero.slug }}
             className="group block overflow-hidden rounded-2xl bg-foreground text-background"
           >
             <div className="grid md:grid-cols-2">
               <div className="relative aspect-[4/3] overflow-hidden md:aspect-auto">
                 <img
-                  src={heroArticle.cover}
-                  alt={heroArticle.title}
+                  src={hero.cover}
+                  alt={hero.title}
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                 />
                 <span className="absolute left-4 top-4 grid h-12 w-12 place-items-center rounded-full bg-brand text-sm font-bold text-brand-foreground ring-4 ring-background/20">
@@ -105,16 +114,16 @@ function MainGrid() {
               </div>
               <div className="flex flex-col justify-between p-6 md:p-8">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-brand">{heroArticle.category}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-brand">{hero.category}</p>
                   <h1 className="mt-3 text-2xl font-bold leading-tight md:text-[28px]">
-                    {heroArticle.title}
+                    {hero.title}
                   </h1>
                 </div>
                 <div className="mt-6 flex items-center gap-3 text-xs text-background/70">
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-brand text-[11px] font-bold text-brand-foreground">
-                    {heroArticle.author.slice(0, 1)}
+                    {hero.author.slice(0, 1)}
                   </span>
-                  <span className="font-medium text-background">{heroArticle.author}</span>
+                  <span className="font-medium text-background">{hero.author}</span>
                   <span>·</span>
                   <MessageCircle className="h-3.5 w-3.5" /> 12
                 </div>
@@ -123,7 +132,7 @@ function MainGrid() {
           </Link>
 
           <div className="grid gap-6 sm:grid-cols-2">
-            {articles.slice(0, 2).map((a) => (
+            {secondaryFilled.map((a) => (
               <Link
                 key={a.slug}
                 to="/blog/$slug"
@@ -185,6 +194,7 @@ function MainGrid() {
     </section>
   );
 }
+
 
 function LatestVideos() {
   return (
