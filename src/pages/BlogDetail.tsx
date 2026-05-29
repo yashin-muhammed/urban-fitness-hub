@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Twitter, Facebook, Linkedin, Link2 } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -9,23 +9,12 @@ import { heroArticle, articles, products } from "@/lib/mock-data";
 import { getPublishedPostBySlug } from "@/lib/posts";
 import { formatDate, estimateReadTime } from "@/lib/post-display";
 
-export const Route = createFileRoute("/blog/$slug")({
-  head: () => ({
-    meta: [
-      { title: `${heroArticle.title} — Urban Fitness Cart` },
-      { name: "description", content: heroArticle.excerpt },
-      { property: "og:title", content: heroArticle.title },
-      { property: "og:description", content: heroArticle.excerpt },
-    ],
-  }),
-  component: BlogDetail,
-});
-
-function BlogDetail() {
-  const { slug } = Route.useParams();
+export default function BlogDetail() {
+  const { slug } = useParams<{ slug: string }>();
   const { data: dbPost, isLoading } = useQuery({
     queryKey: ["post", "slug", slug],
-    queryFn: () => getPublishedPostBySlug(slug),
+    queryFn: () => getPublishedPostBySlug(slug!),
+    enabled: !!slug,
   });
 
   if (isLoading) {
@@ -38,7 +27,6 @@ function BlogDetail() {
     );
   }
 
-  // Live post from DB
   if (dbPost) {
     return (
       <div className="min-h-screen bg-background">
@@ -75,35 +63,45 @@ function BlogDetail() {
               className="prose-content text-[17px] leading-[1.8] text-foreground/90"
               dangerouslySetInnerHTML={{ __html: dbPost.content_html }}
             />
-
-            <div className="mt-10 flex items-center gap-3 border-t border-border pt-6">
-              <span className="text-sm font-medium">Share:</span>
-              {[Twitter, Facebook, Linkedin, Link2].map((Icon, i) => (
-                <button
-                  key={i}
-                  className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-foreground hover:text-background"
-                  aria-label="Share"
-                >
-                  <Icon className="h-4 w-4" />
-                </button>
-              ))}
-            </div>
+            <ShareButtons />
           </div>
         </article>
 
-        <section className="container-page py-16">
-          <h2 className="mb-8 text-2xl font-bold tracking-tight md:text-3xl">Related reading</h2>
-          <div className="grid gap-10 md:grid-cols-3">
-            {articles.map((a) => <ArticleCard key={a.slug} {...a} />)}
-          </div>
-        </section>
+        <RelatedSection />
         <SiteFooter />
       </div>
     );
   }
 
-  // Fallback: original mock content
   return <MockBlogDetail />;
+}
+
+function ShareButtons() {
+  return (
+    <div className="mt-10 flex items-center gap-3 border-t border-border pt-6">
+      <span className="text-sm font-medium">Share:</span>
+      {[Twitter, Facebook, Linkedin, Link2].map((Icon, i) => (
+        <button
+          key={i}
+          className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-foreground hover:text-background"
+          aria-label="Share"
+        >
+          <Icon className="h-4 w-4" />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RelatedSection() {
+  return (
+    <section className="container-page py-16">
+      <h2 className="mb-8 text-2xl font-bold tracking-tight md:text-3xl">Related reading</h2>
+      <div className="grid gap-10 md:grid-cols-3">
+        {articles.map((a) => <ArticleCard key={a.slug} {...a} />)}
+      </div>
+    </section>
+  );
 }
 
 const toc = [
@@ -192,31 +190,14 @@ function MockBlogDetail() {
               If you can stretch your budget, the PowerBlock Pro 50 is the easy winner.
             </p>
 
-            <div className="mt-10 flex items-center gap-3 border-t border-border pt-6">
-              <span className="text-sm font-medium">Share:</span>
-              {[Twitter, Facebook, Linkedin, Link2].map((Icon, i) => (
-                <button
-                  key={i}
-                  className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-foreground hover:text-background"
-                  aria-label="Share"
-                >
-                  <Icon className="h-4 w-4" />
-                </button>
-              ))}
-            </div>
+            <ShareButtons />
           </div>
 
           <div />
         </div>
       </article>
 
-      <section className="container-page py-16">
-        <h2 className="mb-8 text-2xl font-bold tracking-tight md:text-3xl">Related reading</h2>
-        <div className="grid gap-10 md:grid-cols-3">
-          {articles.map((a) => <ArticleCard key={a.slug} {...a} />)}
-        </div>
-      </section>
-
+      <RelatedSection />
       <SiteFooter />
     </div>
   );

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -16,17 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getPost, upsertPost, uploadCover, slugify, type PostStatus } from "@/lib/posts";
 
-type EditorSearch = { id?: string };
-
-export const Route = createFileRoute("/admin/editor")({
-  validateSearch: (s: Record<string, unknown>): EditorSearch => ({
-    id: typeof s.id === "string" ? s.id : undefined,
-  }),
-  component: EditorPage,
-});
-
-function EditorPage() {
-  const { id } = Route.useSearch();
+export default function EditorPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const id = searchParams.get("id") ?? undefined;
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -57,7 +49,6 @@ function EditorPage() {
     },
   });
 
-  // Load existing post
   const { data: existing, isLoading: loadingPost } = useQuery({
     queryKey: ["posts", id],
     queryFn: () => getPost(id!),
@@ -83,7 +74,7 @@ function EditorPage() {
     mutationFn: async (nextStatus: PostStatus) => {
       if (!title.trim()) throw new Error("Title is required");
       const finalSlug = slug.trim() || slugify(title);
-      const result = await upsertPost({
+      return upsertPost({
         id: postId,
         slug: finalSlug,
         title: title.trim(),
@@ -95,7 +86,6 @@ function EditorPage() {
         meta_description: meta.trim() || null,
         status: nextStatus,
       });
-      return result;
     },
     onSuccess: (p, nextStatus) => {
       setPostId(p.id);
@@ -104,10 +94,9 @@ function EditorPage() {
       qc.invalidateQueries({ queryKey: ["posts", p.id] });
       toast.success(nextStatus === "published" ? "Post published" : "Draft saved");
       if (nextStatus === "published") {
-        navigate({ to: "/admin/posts" });
+        navigate("/admin/posts");
       } else if (!id) {
-        // sync URL so refresh keeps the same post
-        navigate({ to: "/admin/editor", search: { id: p.id }, replace: true });
+        setSearchParams({ id: p.id }, { replace: true });
       }
     },
     onError: (e: Error) => toast.error(e.message),

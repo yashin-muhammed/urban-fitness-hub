@@ -1,11 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { FileText, Eye, TrendingUp, Edit3, Plus, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { articles, heroArticle } from "@/lib/mock-data";
-
-export const Route = createFileRoute("/admin/")({
-  component: AdminDashboard,
-});
 
 const stats = [
   { label: "Published posts", value: "128", change: "+12 this month", icon: FileText },
@@ -14,7 +10,7 @@ const stats = [
   { label: "SEO score (avg)", value: "92", change: "Healthy", icon: TrendingUp },
 ];
 
-function AdminDashboard() {
+export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -72,7 +68,7 @@ function AdminDashboard() {
           <h2 className="text-lg font-bold">Activity</h2>
           <div className="mt-4 space-y-4">
             {[
-              ["Layla", "published “Best adjustable dumbbells of 2026”", "2h ago"],
+              ["Layla", "published 'Best adjustable dumbbells of 2026'", "2h ago"],
               ["Omar", "uploaded 12 images", "4h ago"],
               ["Sara", "created a draft", "yesterday"],
               ["Layla", "edited SEO metadata", "yesterday"],

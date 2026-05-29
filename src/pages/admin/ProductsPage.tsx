@@ -1,14 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/site/ProductCard";
 import { products } from "@/lib/mock-data";
 
-export const Route = createFileRoute("/admin/products")({
-  component: ProductsPage,
-});
-
-function ProductsPage() {
+export default function ProductsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

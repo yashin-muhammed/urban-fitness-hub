@@ -1,15 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { Plus, Pencil, Trash2, Eye, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { listPosts, deletePost, type Post } from "@/lib/posts";
 
-export const Route = createFileRoute("/admin/posts")({
-  component: PostsPage,
-});
-
-function PostsPage() {
+export default function PostsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: rows, isLoading } = useQuery({
@@ -88,18 +84,16 @@ function PostsPage() {
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => navigate({ to: "/admin/preview/$id", params: { id: r.id } })}
+                        onClick={() => navigate(`/admin/preview/${r.id}`)}
                         className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                         aria-label="Preview"
-                        title="Preview"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => navigate({ to: "/admin/editor", search: { id: r.id } })}
+                        onClick={() => navigate(`/admin/editor?id=${r.id}`)}
                         className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                         aria-label="Edit"
-                        title="Edit"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
@@ -109,7 +103,6 @@ function PostsPage() {
                         }}
                         className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                         aria-label="Delete"
-                        title="Delete"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

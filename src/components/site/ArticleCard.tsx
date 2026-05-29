@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 
 type Props = {
   slug: string;
@@ -14,7 +14,7 @@ type Props = {
 
 export function ArticleCard({ slug, title, excerpt, category, cover, author, date, readTime, size = "default" }: Props) {
   return (
-    <Link to="/blog/$slug" params={{ slug }} className="group block">
+    <Link to={`/blog/${slug}`} className="group block">
       <div className="overflow-hidden rounded-xl bg-surface">
         <div className="aspect-[16/10] overflow-hidden">
           <img

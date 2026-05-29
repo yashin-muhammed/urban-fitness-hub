@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, ChevronRight, Play, Mail, MessageCircle } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -12,28 +12,14 @@ import { heroArticle as mockHero, articles as mockArticles, products, brands } f
 import { listPublishedPosts } from "@/lib/posts";
 import { postToCard, type ArticleCardData } from "@/lib/post-display";
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Urban Fitness Cart — Honest Reviews of Fitness Gear, Gadgets & Home Gyms" },
-      { name: "description", content: "Independent reviews of fitness equipment, sports gadgets and home gym products. Plus the latest fitness news and events across the UAE." },
-      { property: "og:title", content: "Urban Fitness Cart" },
-      { property: "og:description", content: "Honest reviews of fitness gear, gadgets and home gyms." },
-    ],
-  }),
-  component: HomePage,
-});
-
-function HomePage() {
+export default function HomePage() {
   const { data: published } = useQuery({
     queryKey: ["posts", "published"],
     queryFn: listPublishedPosts,
   });
   const dbCards: ArticleCardData[] = (published ?? []).map(postToCard);
 
-  // Hero = most recent published, fallback to mock
   const hero: ArticleCardData = dbCards[0] ?? mockHero;
-  // Article feeds: combine DB posts first, then top up from mock
   const feed: ArticleCardData[] = [...dbCards.slice(1), ...mockArticles];
   const reviewsFeed = feed.slice(0, 3);
   const newsFeed = [...feed].reverse().slice(0, 3);
@@ -61,7 +47,6 @@ function HomePage() {
     </div>
   );
 }
-
 
 function DealBanner() {
   return (
@@ -94,11 +79,9 @@ function MainGrid({
   return (
     <section className="container-page pt-8 pb-14">
       <div className="grid gap-8 lg:grid-cols-12">
-        {/* LEFT — Hero + 2 best products */}
         <div className="lg:col-span-8 space-y-6">
           <Link
-            to="/blog/$slug"
-            params={{ slug: hero.slug }}
+            to={`/blog/${hero.slug}`}
             className="group block overflow-hidden rounded-2xl bg-foreground text-background"
           >
             <div className="grid md:grid-cols-2">
@@ -135,8 +118,7 @@ function MainGrid({
             {secondaryFilled.map((a) => (
               <Link
                 key={a.slug}
-                to="/blog/$slug"
-                params={{ slug: a.slug }}
+                to={`/blog/${a.slug}`}
                 className="group block overflow-hidden rounded-2xl bg-surface"
               >
                 <div className="aspect-[16/10] overflow-hidden">
@@ -161,15 +143,13 @@ function MainGrid({
           </div>
         </div>
 
-        {/* RIGHT — Top stories */}
         <aside className="lg:col-span-4">
           <h2 className="text-2xl font-bold text-brand">Top stories</h2>
           <ol className="mt-5 space-y-5">
             {topStories.map((s, i) => (
               <li key={i}>
                 <Link
-                  to="/blog/$slug"
-                  params={{ slug: s.slug }}
+                  to={`/blog/${s.slug}`}
                   className="group flex items-start gap-4"
                 >
                   <span className="mt-1 grid h-7 w-7 flex-none place-items-center rounded-full bg-brand text-xs font-bold text-brand-foreground">
@@ -194,7 +174,6 @@ function MainGrid({
     </section>
   );
 }
-
 
 function LatestVideos() {
   return (

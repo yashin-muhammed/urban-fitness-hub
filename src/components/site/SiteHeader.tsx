@@ -1,19 +1,19 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useLocation } from "react-router-dom";
 import { Search, Menu, Dumbbell } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const nav = [
-  { to: "/", label: "Home", search: undefined as undefined | { category: string } },
-  { to: "/blog", label: "Reviews", search: { category: "Reviews" } },
-  { to: "/blog", label: "Gadgets", search: { category: "Gadgets" } },
-  { to: "/blog", label: "Home Gym", search: { category: "Home Gym" } },
-  { to: "/blog", label: "Events", search: { category: "Events" } },
+  { to: "/", label: "Home" },
+  { to: "/blog?category=Reviews", label: "Reviews" },
+  { to: "/blog?category=Gadgets", label: "Gadgets" },
+  { to: "/blog?category=Home+Gym", label: "Home Gym" },
+  { to: "/blog?category=Events", label: "Events" },
 ];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const path = useRouterState({ select: (r) => r.location.pathname });
+  const { pathname } = useLocation();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
@@ -32,9 +32,8 @@ export function SiteHeader() {
             <Link
               key={i}
               to={n.to}
-              search={n.search as any}
               className={`text-sm font-medium transition-colors hover:text-brand ${
-                path === n.to ? "text-foreground" : "text-muted-foreground"
+                pathname === n.to.split("?")[0] ? "text-foreground" : "text-muted-foreground"
               }`}
             >
               {n.label}
@@ -68,7 +67,6 @@ export function SiteHeader() {
               <Link
                 key={i}
                 to={n.to}
-                search={n.search as any}
                 onClick={() => setOpen(false)}
                 className="py-2 text-sm font-medium text-foreground"
               >

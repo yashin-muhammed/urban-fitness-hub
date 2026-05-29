@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, FileText, Package, Image as ImageIcon, Users, Settings, LogOut, Dumbbell, Search, Bell, Loader2, ShieldAlert,
 } from "lucide-react";
@@ -7,11 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-
-export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin · Urban Fitness Cart" }] }),
-  component: AdminLayout,
-});
 
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -23,13 +18,13 @@ const nav = [
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
-function AdminLayout() {
-  const path = useRouterState({ select: (r) => r.location.pathname });
+export default function AdminLayout() {
+  const { pathname } = useLocation();
   const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
+    if (!loading && !user) navigate("/login");
   }, [loading, user, navigate]);
 
   if (loading || !user) {
@@ -54,7 +49,7 @@ function AdminLayout() {
           </p>
           <div className="mt-6 flex justify-center gap-2">
             <Button variant="outline" asChild><Link to="/">Back to site</Link></Button>
-            <Button onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/login" }); }}>Sign out</Button>
+            <Button onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }}>Sign out</Button>
           </div>
         </div>
       </div>
@@ -77,7 +72,7 @@ function AdminLayout() {
         </div>
         <nav className="flex-1 space-y-1 p-3">
           {nav.map((n) => {
-            const active = n.exact ? path === n.to : path.startsWith(n.to);
+            const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
             return (
               <Link
                 key={n.to + n.label}
@@ -97,7 +92,7 @@ function AdminLayout() {
             <LogOut className="h-4 w-4" /> Back to site
           </Link>
           <button
-            onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/login" }); }}
+            onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <LogOut className="h-4 w-4" /> Sign out

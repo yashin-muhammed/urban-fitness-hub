@@ -1,10 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-export const Route = createFileRoute("/admin/users")({
-  component: UsersPage,
-});
 
 const team = [
   { name: "Layla Hassan", role: "Super Admin", email: "layla@ufc.ae" },
@@ -13,7 +8,7 @@ const team = [
   { name: "Yousef Ali", role: "Editor", email: "yousef@ufc.ae" },
 ];
 
-function UsersPage() {
+export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

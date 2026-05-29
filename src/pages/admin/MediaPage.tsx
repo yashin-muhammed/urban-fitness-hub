@@ -1,14 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { Upload, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { products, articles, heroArticle } from "@/lib/mock-data";
 
-export const Route = createFileRoute("/admin/media")({
-  component: MediaPage,
-});
-
-function MediaPage() {
+export default function MediaPage() {
   const all = [heroArticle.cover, ...articles.map((a) => a.cover), ...products.map((p) => p.image)];
   const media = [...all, ...all, ...all];
 

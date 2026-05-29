@@ -1,19 +1,13 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Dumbbell, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in · Urban Fitness Cart" }] }),
-  component: LoginPage,
-});
-
-function LoginPage() {
+export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +15,7 @@ function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate({ to: "/admin" });
+      if (session) navigate("/admin");
     });
   }, [navigate]);
 
@@ -32,7 +26,7 @@ function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       toast.success("Welcome back");
-      navigate({ to: "/admin" });
+      navigate("/admin");
     } catch (err: any) {
       toast.error(err.message ?? "Sign-in failed");
     } finally {
@@ -42,16 +36,14 @@ function LoginPage() {
 
   async function handleGoogle() {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/admin",
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/admin" },
     });
-    if (result.error) {
+    if (error) {
       toast.error("Google sign-in failed");
       setBusy(false);
-      return;
     }
-    if (result.redirected) return;
-    navigate({ to: "/admin" });
   }
 
   return (

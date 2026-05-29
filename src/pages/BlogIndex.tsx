@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Search, LayoutGrid, List } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -11,27 +11,17 @@ import { articles, heroArticle, categories } from "@/lib/mock-data";
 import { listPublishedPosts } from "@/lib/posts";
 import { postToCard, type ArticleCardData } from "@/lib/post-display";
 
-export const Route = createFileRoute("/blog/")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    category: typeof search.category === "string" ? search.category : undefined,
-  }),
-  head: () => ({
-    meta: [
-      { title: "All Reviews & Articles — Urban Fitness Cart" },
-      { name: "description", content: "Browse every fitness review, gear guide, news story and event coverage from our editorial team." },
-    ],
-  }),
-  component: BlogIndex,
-});
-
-
-function BlogIndex() {
-  const { category: searchCat } = Route.useSearch();
-  const navigate = Route.useNavigate();
+export default function BlogIndex() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [view, setView] = useState<"grid" | "list">("grid");
+
+  const searchCat = searchParams.get("category") ?? undefined;
   const cat = searchCat && categories.includes(searchCat) ? searchCat : "All";
-  const setCat = (c: string) =>
-    navigate({ search: { category: c === "All" ? undefined : c }, replace: true });
+  const setCat = (c: string) => {
+    if (c === "All") setSearchParams({});
+    else setSearchParams({ category: c });
+  };
+
   const { data: published } = useQuery({
     queryKey: ["posts", "published"],
     queryFn: listPublishedPosts,
@@ -40,7 +30,6 @@ function BlogIndex() {
   const mock: ArticleCardData[] = [heroArticle, ...articles, ...articles, ...articles];
   const combined: ArticleCardData[] = dbCards.length > 0 ? [...dbCards, ...mock] : mock;
   const all = cat === "All" ? combined : combined.filter((a) => a.category === cat);
-
 
   return (
     <div className="min-h-screen bg-background">

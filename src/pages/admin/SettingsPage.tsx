@@ -1,13 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export const Route = createFileRoute("/admin/settings")({
-  component: SettingsPage,
-});
-
-function SettingsPage() {
+export default function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>

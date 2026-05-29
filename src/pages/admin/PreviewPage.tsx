@@ -1,18 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getPost } from "@/lib/posts";
 
-export const Route = createFileRoute("/admin/preview/$id")({
-  component: PreviewPage,
-});
-
-function PreviewPage() {
-  const { id } = Route.useParams();
+export default function PreviewPage() {
+  const { id } = useParams<{ id: string }>();
   const { data: post, isLoading } = useQuery({
     queryKey: ["posts", id],
-    queryFn: () => getPost(id),
+    queryFn: () => getPost(id!),
+    enabled: !!id,
   });
 
   if (isLoading) {
@@ -38,7 +36,7 @@ function PreviewPage() {
         <Link to="/admin/posts" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back to posts
         </Link>
-        <Link to="/admin/editor" search={{ id: post.id }}>
+        <Link to={`/admin/editor?id=${post.id}`}>
           <Button size="sm" className="gap-2"><Pencil className="h-4 w-4" /> Edit</Button>
         </Link>
       </div>
