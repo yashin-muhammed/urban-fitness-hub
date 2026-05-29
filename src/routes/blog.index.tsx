@@ -25,7 +25,14 @@ export const Route = createFileRoute("/blog/")({
 function BlogIndex() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [cat, setCat] = useState("All");
-  const all = [heroArticle, ...articles, ...articles, ...articles];
+  const { data: published } = useQuery({
+    queryKey: ["posts", "published"],
+    queryFn: listPublishedPosts,
+  });
+  const dbCards: ArticleCardData[] = (published ?? []).map(postToCard);
+  const mock: ArticleCardData[] = [heroArticle, ...articles, ...articles, ...articles];
+  const all: ArticleCardData[] = dbCards.length > 0 ? [...dbCards, ...mock] : mock;
+
 
   return (
     <div className="min-h-screen bg-background">
