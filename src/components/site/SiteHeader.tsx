@@ -4,11 +4,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const nav = [
-  { to: "/", label: "Home" },
-  { to: "/blog", label: "Reviews" },
-  { to: "/blog", label: "Gadgets" },
-  { to: "/blog", label: "Home Gym" },
-  { to: "/blog", label: "Events" },
+  { to: "/", label: "Home", search: undefined as undefined | { category: string } },
+  { to: "/blog", label: "Reviews", search: { category: "Reviews" } },
+  { to: "/blog", label: "Gadgets", search: { category: "Gadgets" } },
+  { to: "/blog", label: "Home Gym", search: { category: "Home Gym" } },
+  { to: "/blog", label: "Events", search: { category: "Events" } },
 ];
 
 export function SiteHeader() {
@@ -32,6 +32,7 @@ export function SiteHeader() {
             <Link
               key={i}
               to={n.to}
+              search={n.search as any}
               className={`text-sm font-medium transition-colors hover:text-brand ${
                 path === n.to ? "text-foreground" : "text-muted-foreground"
               }`}
@@ -67,6 +68,7 @@ export function SiteHeader() {
               <Link
                 key={i}
                 to={n.to}
+                search={n.search as any}
                 onClick={() => setOpen(false)}
                 className="py-2 text-sm font-medium text-foreground"
               >

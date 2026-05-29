@@ -12,6 +12,9 @@ import { listPublishedPosts } from "@/lib/posts";
 import { postToCard, type ArticleCardData } from "@/lib/post-display";
 
 export const Route = createFileRoute("/blog/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    category: typeof search.category === "string" ? search.category : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "All Reviews & Articles — Urban Fitness Cart" },
@@ -23,15 +26,20 @@ export const Route = createFileRoute("/blog/")({
 
 
 function BlogIndex() {
+  const { category: searchCat } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [cat, setCat] = useState("All");
+  const cat = searchCat && categories.includes(searchCat) ? searchCat : "All";
+  const setCat = (c: string) =>
+    navigate({ search: { category: c === "All" ? undefined : c }, replace: true });
   const { data: published } = useQuery({
     queryKey: ["posts", "published"],
     queryFn: listPublishedPosts,
   });
   const dbCards: ArticleCardData[] = (published ?? []).map(postToCard);
   const mock: ArticleCardData[] = [heroArticle, ...articles, ...articles, ...articles];
-  const all: ArticleCardData[] = dbCards.length > 0 ? [...dbCards, ...mock] : mock;
+  const combined: ArticleCardData[] = dbCards.length > 0 ? [...dbCards, ...mock] : mock;
+  const all = cat === "All" ? combined : combined.filter((a) => a.category === cat);
 
 
   return (
