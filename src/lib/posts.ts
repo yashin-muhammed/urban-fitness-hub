@@ -49,6 +49,27 @@ export async function listPosts(): Promise<Post[]> {
   return (data ?? []) as Post[];
 }
 
+export async function listPublishedPosts(): Promise<Post[]> {
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("status", "published")
+    .order("published_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Post[];
+}
+
+export async function getPublishedPostBySlug(slug: string): Promise<Post | null> {
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle();
+  if (error) throw error;
+  return (data as Post) ?? null;
+}
+
 export async function getPost(id: string): Promise<Post | null> {
   const { data, error } = await supabase
     .from("posts")

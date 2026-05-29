@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, ChevronRight, Play, Mail, MessageCircle } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
@@ -7,7 +8,9 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { heroArticle, articles, products, brands } from "@/lib/mock-data";
+import { heroArticle as mockHero, articles as mockArticles, products, brands } from "@/lib/mock-data";
+import { listPublishedPosts } from "@/lib/posts";
+import { postToCard, type ArticleCardData } from "@/lib/post-display";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,31 +24,44 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-// Build a "top stories" feed by combining articles + products-as-news
-const topStories = [
-  { kind: "News", title: articles[0].title, author: articles[0].author, image: articles[0].cover, slug: articles[0].slug },
-  { kind: "Versus", title: "PowerBlock Pro 50 vs Bowflex SelectTech: Worth the extra AED 800?", author: "Layla Hassan", image: products[0].image, slug: heroArticle.slug },
-  { kind: "Reviews", title: articles[1].title, author: articles[1].author, image: articles[1].cover, slug: articles[1].slug },
-  { kind: "Versus", title: "Garmin Forerunner 965 vs Apple Watch Ultra 2: Which tracks better?", author: "Omar Khalid", image: products[1].image, slug: heroArticle.slug },
-  { kind: "News", title: articles[2].title, author: articles[2].author, image: articles[2].cover, slug: articles[2].slug },
-];
-
 function HomePage() {
+  const { data: published } = useQuery({
+    queryKey: ["posts", "published"],
+    queryFn: listPublishedPosts,
+  });
+  const dbCards: ArticleCardData[] = (published ?? []).map(postToCard);
+
+  // Hero = most recent published, fallback to mock
+  const hero: ArticleCardData = dbCards[0] ?? mockHero;
+  // Article feeds: combine DB posts first, then top up from mock
+  const feed: ArticleCardData[] = [...dbCards.slice(1), ...mockArticles];
+  const reviewsFeed = feed.slice(0, 3);
+  const newsFeed = [...feed].reverse().slice(0, 3);
+
+  const topStories = [
+    { kind: "News", title: feed[0]?.title ?? mockArticles[0].title, author: feed[0]?.author ?? mockArticles[0].author, image: feed[0]?.cover ?? mockArticles[0].cover, slug: feed[0]?.slug ?? mockArticles[0].slug },
+    { kind: "Versus", title: "PowerBlock Pro 50 vs Bowflex SelectTech: Worth the extra AED 800?", author: "Layla Hassan", image: products[0].image, slug: hero.slug },
+    { kind: "Reviews", title: feed[1]?.title ?? mockArticles[1].title, author: feed[1]?.author ?? mockArticles[1].author, image: feed[1]?.cover ?? mockArticles[1].cover, slug: feed[1]?.slug ?? mockArticles[1].slug },
+    { kind: "Versus", title: "Garmin Forerunner 965 vs Apple Watch Ultra 2: Which tracks better?", author: "Omar Khalid", image: products[1].image, slug: hero.slug },
+    { kind: "News", title: feed[2]?.title ?? mockArticles[2].title, author: feed[2]?.author ?? mockArticles[2].author, image: feed[2]?.cover ?? mockArticles[2].cover, slug: feed[2]?.slug ?? mockArticles[2].slug },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <DealBanner />
-      <MainGrid />
+      <MainGrid hero={hero} secondary={feed.slice(0, 2)} topStories={topStories} />
       <LatestVideos />
-      <CategoryStrip title="Latest reviews" items={articles} />
+      <CategoryStrip title="Latest reviews" items={reviewsFeed} />
       <BestLists />
-      <CategoryStrip title="Fitness news" items={[...articles].reverse()} />
+      <CategoryStrip title="Fitness news" items={newsFeed} />
       <Brands />
       <Newsletter />
       <SiteFooter />
     </div>
   );
 }
+
 
 function DealBanner() {
   return (
@@ -65,7 +81,16 @@ function DealBanner() {
   );
 }
 
-function MainGrid() {
+function MainGrid({
+  hero,
+  secondary,
+  topStories,
+}: {
+  hero: ArticleCardData;
+  secondary: ArticleCardData[];
+  topStories: { kind: string; title: string; author: string; image: string; slug: string }[];
+}) {
+  const secondaryFilled = secondary.length >= 2 ? secondary : [...secondary, ...mockArticles].slice(0, 2);
   return (
     <section className="container-page pt-8 pb-14">
       <div className="grid gap-8 lg:grid-cols-12">
@@ -73,14 +98,14 @@ function MainGrid() {
         <div className="lg:col-span-8 space-y-6">
           <Link
             to="/blog/$slug"
-            params={{ slug: heroArticle.slug }}
+            params={{ slug: hero.slug }}
             className="group block overflow-hidden rounded-2xl bg-foreground text-background"
           >
             <div className="grid md:grid-cols-2">
               <div className="relative aspect-[4/3] overflow-hidden md:aspect-auto">
                 <img
-                  src={heroArticle.cover}
-                  alt={heroArticle.title}
+                  src={hero.cover}
+                  alt={hero.title}
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                 />
                 <span className="absolute left-4 top-4 grid h-12 w-12 place-items-center rounded-full bg-brand text-sm font-bold text-brand-foreground ring-4 ring-background/20">
@@ -89,16 +114,16 @@ function MainGrid() {
               </div>
               <div className="flex flex-col justify-between p-6 md:p-8">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-brand">{heroArticle.category}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-brand">{hero.category}</p>
                   <h1 className="mt-3 text-2xl font-bold leading-tight md:text-[28px]">
-                    {heroArticle.title}
+                    {hero.title}
                   </h1>
                 </div>
                 <div className="mt-6 flex items-center gap-3 text-xs text-background/70">
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-brand text-[11px] font-bold text-brand-foreground">
-                    {heroArticle.author.slice(0, 1)}
+                    {hero.author.slice(0, 1)}
                   </span>
-                  <span className="font-medium text-background">{heroArticle.author}</span>
+                  <span className="font-medium text-background">{hero.author}</span>
                   <span>·</span>
                   <MessageCircle className="h-3.5 w-3.5" /> 12
                 </div>
@@ -107,7 +132,7 @@ function MainGrid() {
           </Link>
 
           <div className="grid gap-6 sm:grid-cols-2">
-            {articles.slice(0, 2).map((a) => (
+            {secondaryFilled.map((a) => (
               <Link
                 key={a.slug}
                 to="/blog/$slug"
@@ -170,6 +195,7 @@ function MainGrid() {
   );
 }
 
+
 function LatestVideos() {
   return (
     <section className="container-page py-12 border-t border-border">
@@ -202,7 +228,7 @@ function LatestVideos() {
   );
 }
 
-function CategoryStrip({ title, items }: { title: string; items: typeof articles }) {
+function CategoryStrip({ title, items }: { title: string; items: ArticleCardData[] }) {
   return (
     <section className="container-page py-12 border-t border-border">
       <SectionHeader eyebrow="" title={title} href="/blog" />

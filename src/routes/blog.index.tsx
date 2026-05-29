@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, LayoutGrid, List } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
@@ -7,6 +8,8 @@ import { ArticleCard } from "@/components/site/ArticleCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { articles, heroArticle, categories } from "@/lib/mock-data";
+import { listPublishedPosts } from "@/lib/posts";
+import { postToCard, type ArticleCardData } from "@/lib/post-display";
 
 export const Route = createFileRoute("/blog/")({
   head: () => ({
@@ -18,10 +21,18 @@ export const Route = createFileRoute("/blog/")({
   component: BlogIndex,
 });
 
+
 function BlogIndex() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [cat, setCat] = useState("All");
-  const all = [heroArticle, ...articles, ...articles, ...articles];
+  const { data: published } = useQuery({
+    queryKey: ["posts", "published"],
+    queryFn: listPublishedPosts,
+  });
+  const dbCards: ArticleCardData[] = (published ?? []).map(postToCard);
+  const mock: ArticleCardData[] = [heroArticle, ...articles, ...articles, ...articles];
+  const all: ArticleCardData[] = dbCards.length > 0 ? [...dbCards, ...mock] : mock;
+
 
   return (
     <div className="min-h-screen bg-background">
