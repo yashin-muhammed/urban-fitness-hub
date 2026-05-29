@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Twitter, Facebook, Linkedin, Link2 } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { ArticleCard } from "@/components/site/ArticleCard";
 import { ProductCard } from "@/components/site/ProductCard";
 import { heroArticle, articles, products } from "@/lib/mock-data";
+import { getPublishedPostBySlug } from "@/lib/posts";
+import { formatDate, estimateReadTime } from "@/lib/post-display";
 
 export const Route = createFileRoute("/blog/$slug")({
   head: () => ({
@@ -13,11 +16,95 @@ export const Route = createFileRoute("/blog/$slug")({
       { name: "description", content: heroArticle.excerpt },
       { property: "og:title", content: heroArticle.title },
       { property: "og:description", content: heroArticle.excerpt },
-      { property: "og:image", content: heroArticle.cover },
     ],
   }),
   component: BlogDetail,
 });
+
+function BlogDetail() {
+  const { slug } = Route.useParams();
+  const { data: dbPost, isLoading } = useQuery({
+    queryKey: ["post", "slug", slug],
+    queryFn: () => getPublishedPostBySlug(slug),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SiteHeader />
+        <div className="container-page py-20 text-center text-muted-foreground">Loading…</div>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  // Live post from DB
+  if (dbPost) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SiteHeader />
+        <article className="container-page pb-20 pt-12">
+          <div className="mx-auto max-w-3xl">
+            {dbPost.category && (
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+                {dbPost.category}
+              </span>
+            )}
+            <h1 className="mt-3 text-balance text-4xl font-bold leading-[1.1] tracking-tight md:text-5xl">
+              {dbPost.title}
+            </h1>
+            {dbPost.subtitle && (
+              <p className="mt-5 text-lg text-muted-foreground">{dbPost.subtitle}</p>
+            )}
+            <div className="mt-6 flex flex-wrap items-center gap-4 border-b border-border pb-6 text-sm">
+              <span className="font-semibold">Editorial</span>
+              <span className="text-muted-foreground">
+                {formatDate(dbPost.published_at ?? dbPost.updated_at)} · {estimateReadTime(dbPost.content_html)}
+              </span>
+            </div>
+          </div>
+
+          {dbPost.cover_url && (
+            <div className="mx-auto mt-10 max-w-5xl overflow-hidden rounded-2xl bg-surface">
+              <img src={dbPost.cover_url} alt={dbPost.title} className="aspect-[16/9] w-full object-cover" />
+            </div>
+          )}
+
+          <div className="mx-auto mt-12 max-w-3xl">
+            <div
+              className="prose-content text-[17px] leading-[1.8] text-foreground/90"
+              dangerouslySetInnerHTML={{ __html: dbPost.content_html }}
+            />
+
+            <div className="mt-10 flex items-center gap-3 border-t border-border pt-6">
+              <span className="text-sm font-medium">Share:</span>
+              {[Twitter, Facebook, Linkedin, Link2].map((Icon, i) => (
+                <button
+                  key={i}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-foreground hover:text-background"
+                  aria-label="Share"
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </article>
+
+        <section className="container-page py-16">
+          <h2 className="mb-8 text-2xl font-bold tracking-tight md:text-3xl">Related reading</h2>
+          <div className="grid gap-10 md:grid-cols-3">
+            {articles.map((a) => <ArticleCard key={a.slug} {...a} />)}
+          </div>
+        </section>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  // Fallback: original mock content
+  return <MockBlogDetail />;
+}
 
 const toc = [
   "Why adjustable dumbbells",
@@ -28,7 +115,7 @@ const toc = [
   "Verdict",
 ];
 
-function BlogDetail() {
+function MockBlogDetail() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -92,17 +179,6 @@ function BlogDetail() {
               after being dropped from bench height.
             </p>
 
-            <div className="my-8 overflow-hidden rounded-2xl bg-foreground">
-              <div className="aspect-video w-full bg-foreground">
-                <iframe
-                  className="h-full w-full"
-                  src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                  title="Review video"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-
             <h2 id="s2" className="mt-10 text-2xl font-bold tracking-tight">Top pick: PowerBlock Pro 50</h2>
             <p>
               It's the quietest, most precise system we tested. The 2.5kg micro-loading lets you progress
@@ -113,8 +189,7 @@ function BlogDetail() {
 
             <h2 id="s5" className="mt-10 text-2xl font-bold tracking-tight">Verdict</h2>
             <p>
-              If you can stretch your budget, the PowerBlock Pro 50 is the easy winner. If not, the Garmin
-              ecosystem makes the watch pair a smart long-term investment.
+              If you can stretch your budget, the PowerBlock Pro 50 is the easy winner.
             </p>
 
             <div className="mt-10 flex items-center gap-3 border-t border-border pt-6">
