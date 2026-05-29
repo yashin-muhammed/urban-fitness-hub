@@ -228,7 +228,7 @@ function LatestVideos() {
   );
 }
 
-function CategoryStrip({ title, items }: { title: string; items: typeof articles }) {
+function CategoryStrip({ title, items }: { title: string; items: ArticleCardData[] }) {
   return (
     <section className="container-page py-12 border-t border-border">
       <SectionHeader eyebrow="" title={title} href="/blog" />
